@@ -25,3 +25,5 @@ target/
 ### macOS / OS ###
 .DS_Store
 .atl/
+
+.fake

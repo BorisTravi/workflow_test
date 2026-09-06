@@ -1,0 +1,112 @@
+name: Pipeline Project
+
+on:
+    pull_request:
+        types:
+            - closed
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        if: ${{ github.event.pull_request.merged == true }}
+        permissions:
+            contents: read
+            packages: write
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v7
+
+            - name: Set up Docker
+              uses: docker/setup-buildx-action@v5
+
+            - name: Login to Docker Hub
+              uses: docker/login-action@v6
+              with:
+                  registry: ghcr.io
+                  username: ${{ github.actor }}
+                  password: ${{secrets.GITHUB_TOKEN}}
+            - name: Build and push
+              uses: docker/build-push-action@v7
+              with:
+                  push: true
+                  tags: |
+                      ghcr.io/${{ github.repository }}:latest
+                      ghcr.io/${{ github.repository }}:${{ github.sha }}
+                      ghcr.io/${{ github.repository }}:${{ github.ref_name }}
+                  context: .
+                  file: ./Dockerfile
+                  cache-from: type=gha
+                  cache-to: type=gha,mode=max
+
+    unit-tests:
+        runs-on: ubuntu-latest
+        if: ${{ github.event.pull_request.merged == true }}
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v7
+            - name: Set up Java
+              uses: actions/setup-java@4
+              with:
+                  distribution: "temurin"
+                  java-version: "25"
+                  cache: maven
+            - name: Run unit tests
+              run: mvn test
+    Sonar-analysis:
+        runs-on: ubuntu-latest
+        if: ${{ github.event.pull_request.merged == true }}
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v7
+              with:
+                  fetch-depth: 0
+            - name: SonarQube Scan
+              uses: SonarSource/sonarqube-scan-action@v8 # Ex: v4.1.0 or sha1, See the latest version at https://github.com/marketplace/actions/official-sonarqube-scan
+              env:
+                  SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }} # toJson(steps<step_id>.outputs)
+    snyk-analysis:
+        runs-on: ubuntu-latest
+        if: ${{ github.event.pull_request.merged == true }}
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v7
+            - name: Snyk code Scan
+              uses: snyk/actions/maven@v1.0.0
+              env:
+                  SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+     
+    publish-artifacts:
+        runs-on: ubuntu-latest
+        if: ${{ github.event.pull_request.merged == true }}
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v7
+
+            - name: Set up Java
+              uses: actions/setup-java@4
+              with:
+                  distribution: "temurin"
+                  java-version: "25"
+                  cache: maven
+
+            - name: Generate Artifacts
+              run: mvn -q -B dependency:go-offline
+
+            - name: Build Artifacts
+              run: mvn -q -B package
+
+            - name: upload Artifacts
+              uses: actions/upload-artifact@v4
+              with:
+                  name: popshop-artifacts
+                  path: target/popshop-0.1.0.jar
+
+    consolidation-job:
+        if: ${{ github.event.pull_request.merged == true }}
+        needs: [build, unit-tests, Sonar-analysis, snyk-analysis, publish-artifacts]
+        runs-on: ubuntu-latest
+        steps:
+            - name: Reporte Final
+              run: echo "Pipeline completado correctamente!"
+
+                
+                
