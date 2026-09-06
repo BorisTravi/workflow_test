@@ -37,8 +37,8 @@ jobs:
             ${{ env.IMAGE_NAME }}:latest
             ${{ env.IMAGE_NAME }}:${{ github.sha }}
             ${{ env.IMAGE_NAME }}:${{ github.run_number }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=workflow-test
+          cache-to: type=gha,mode=min,scope=workflow-test
 
   unit-tests:
     runs-on: ubuntu-latest
