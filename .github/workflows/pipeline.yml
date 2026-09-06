@@ -31,9 +31,8 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository }}:latest
             ghcr.io/${{ github.repository }}:${{ github.sha }}
-            ghcr.io/${{ github.repository }}:${{ github.ref_name }}
+            ghcr.io/${{ github.repository }}:${{ github.run_number }}
           context: .
-          file: ./Dockerfile
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
