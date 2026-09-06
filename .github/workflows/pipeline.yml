@@ -26,17 +26,17 @@ jobs:
           password: ${{secrets.GITHUB_TOKEN}}
       - name: Set imagen name
         run: |
-         echo "IMAGE_NAME=ghcr.io/${{ github.repository }}" >> "$GITHUB_ENV"
+         echo "IMAGE_NAME=ghcr.io/${github.repository,,}" >> "$GITHUB_ENV"
 
       - name: Build and push
         uses: docker/build-push-action@v7
         with:
+          context: .
           push: true
           tags: |
             ${{ env.IMAGE_NAME }}:latest
             ${{ env.IMAGE_NAME }}:${{ github.sha }}
             ${{ env.IMAGE_NAME }}:${{ github.run_number }}
-          context: .
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
