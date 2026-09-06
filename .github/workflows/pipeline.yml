@@ -38,8 +38,7 @@ jobs:
             ${{ env.IMAGE_NAME }}:${{ github.run_number }}
           context: .
           file : Dockerfile
-          cache-from: type=gha,scope=workflow-test
-          cache-to: type=gha,mode=min,scope=workflow-test
+          cache-from: type=gha
 
   unit-tests:
     runs-on: ubuntu-latest
